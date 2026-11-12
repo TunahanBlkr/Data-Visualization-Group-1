@@ -1,0 +1,8 @@
+# Ignore IDE folder or file
+.vscode/
+*.code-workspace
+
+# Ignore venv directory
+venv/
+.venv/
+env/
