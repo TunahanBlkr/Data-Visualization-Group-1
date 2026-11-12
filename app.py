@@ -1,4 +1,4 @@
-import os
+﻿import os
 import time
 import signal
 import pandas as pd
@@ -30,13 +30,22 @@ target_columns = [
     "name",
     "gender",
     "medal_type",
+    "medal_code",
     "event_type",
+    "discipline",
     "medal_date",
+    "birth_date",
     "is_medallist",
     "country_code",
+    "country",
 ]
 
 df = pd.read_csv("medallists.csv", usecols=target_columns) #
+
+#Derive 'age' column
+df["medal_date"] = pd.to_datetime(df["medal_date"], errors="coerce")
+df["birth_date"] = pd.to_datetime(df["birth_date"], errors="coerce")
+df["age"] = ((df["medal_date"] - df["birth_date"]).dt.days / 365.25).round(1)
 
 if "selected_button" not in st.session_state:
     st.session_state.selected_button = None
