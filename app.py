@@ -1,4 +1,5 @@
-﻿import os
+﻿import random
+import os
 import time
 import signal
 import pandas as pd
@@ -56,7 +57,7 @@ left_column, right_column = st.columns([1, 5]) # Left Column - 16.66% // Right C
 with left_column:
     st.caption("MENU")
 
-    if st.button("Buton 1", key="button_1", use_container_width=True):
+    if st.button("Violin Plot", key="button_1", use_container_width=True):
         st.session_state.selected_button = "Buton 1"
     
     if st.button("Buton 2", key="button_2", use_container_width=True):
@@ -87,7 +88,63 @@ with left_column:
 # Content Area
 with right_column:
     st.caption("Content Area")
-    if st.session_state.selected_button:
+    if st.session_state.selected_button == "Buton 1":
+        st.subheader("Age Distribution by Sport and Gender (Violin Plot)")
+
+        # Celaning data
+        violin_df = df.dropna(subset=["age", "discipline", "gender"]).copy()
+        all_disciplines = sorted(violin_df["discipline"].unique())
+
+        # Select randomly 3 disciplines at first
+        if "selected_disc" not in st.session_state:
+            st.session_state.selected_disc = random.sample(all_disciplines, 3)
+
+        #Fields
+        f_col1, f_col2 = st.columns([1, 3])
+        
+        with f_col1:
+            st.write("") 
+            if st.button("Randomly Select 3 Disciplines", use_container_width=True):
+                st.session_state.selected_disc = random.sample(all_disciplines, 3)
+
+        with f_col2:
+            
+            selected_disciplines = st.multiselect(
+                "Select Disciplines:",
+                options=all_disciplines,
+                key="selected_disc"
+            )
+            
+
+        #Filter the data according to selected disciplines
+        filtered_violin_df = violin_df[
+            (violin_df["discipline"].isin(selected_disciplines))
+        ]
+
+        # Plot Violin
+        if filtered_violin_df.empty:
+            st.warning("Select at least one discipline.")
+        else:
+            fig_violin = px.violin(
+                filtered_violin_df,
+                x="discipline",
+                y="age",
+                color="gender",
+                title="Age Density by Selected Sports and Gender",
+                labels={
+                    "discipline": "Discipline",
+                    "age": "Age",
+                    "gender": "Gender"
+                },
+                color_discrete_sequence=["#2b5c8f", "#d95f02"]
+            )
+
+            fig_violin.update_layout(height=550, violinmode="group")          
+            st.plotly_chart(fig_violin, use_container_width=True)
+
+    
+    elif st.session_state.selected_button:
         st.info(f"**{st.session_state.selected_button}** selected.")
     else:
         st.info("No selection has been made yet.")
+
