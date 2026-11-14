@@ -1,4 +1,5 @@
-﻿import random
+﻿import plotly.graph_objects as go
+import random
 import os
 import time
 import signal
@@ -60,10 +61,10 @@ with left_column:
     if st.button("Violin Plot", key="button_1", use_container_width=True):
         st.session_state.selected_button = "Buton 1"
     
-    if st.button("Buton 2", key="button_2", use_container_width=True):
+    if st.button("Sankey Diagram", key="button_2", use_container_width=True):
         st.session_state.selected_button = "Buton 2"
     
-    if st.button("Buton 3", key="button_3", use_container_width=True):
+    if st.button("Stacked Bar Chart", key="button_3", use_container_width=True):
         st.session_state.selected_button = "Buton 3"
     
     if st.button("Buton 4", key="button_4", use_container_width=True):
@@ -141,6 +142,110 @@ with right_column:
 
             fig_violin.update_layout(height=550, violinmode="group")          
             st.plotly_chart(fig_violin, use_container_width=True)
+
+    elif st.session_state.selected_button == "Buton 2":
+        st.subheader("Medal Flow: Gender ➔ Event Type ➔ Medal Type (Sankey Diagram)")
+
+        # Cleaning data for Sankey
+        sankey_df = df.dropna(subset=["gender", "event_type", "medal_type", "country"]).copy()
+
+        # Make event_type codes more readable (ATH -> Individual, TEAM -> Team)
+        sankey_df["event_category"] = sankey_df["event_type"].apply(
+            lambda x: "Individual Event" if x in ["ATH", "HATH"] else "Team / Group Event"
+        )
+
+        # Country Selection (Empty = All Countries)
+        all_countries = sorted(sankey_df["country"].unique())
+        selected_countries = st.multiselect(
+            "Filter by Country (Leave empty to see All Countries):",
+            options=all_countries,
+            default=[]
+        )
+
+        if selected_countries:
+            sankey_df = sankey_df[sankey_df["country"].isin(selected_countries)]
+
+        # Create unique nodes (labels) for all 3 stages
+        genders = list(sankey_df["gender"].unique())
+        events = list(sankey_df["event_category"].unique())
+        medals = ["Gold Medal", "Silver Medal", "Bronze Medal"]
+        
+        labels = genders + events + medals
+        label_map = {label: i for i, label in enumerate(labels)}
+
+        # Step 1 Links: Gender -> Event Category
+        link1 = sankey_df.groupby(["gender", "event_category"]).size().reset_index(name="count")
+        # Step 2 Links: Event Category -> Medal Type
+        link2 = sankey_df.groupby(["event_category", "medal_type"]).size().reset_index(name="count")
+
+        sources = [label_map[x] for x in link1["gender"]] + [label_map[x] for x in link2["event_category"]]
+        targets = [label_map[x] for x in link1["event_category"]] + [label_map[x] for x in link2["medal_type"]]
+        values = list(link1["count"]) + list(link2["count"])
+
+        # Plot Sankey Diagram
+        fig_sankey = go.Figure(data=[go.Sankey(
+            node=dict(
+                pad=25,
+                thickness=25,
+                line=dict(color="black", width=0.5),
+                label=labels,
+                color=["#2b5c8f", "#d95f02", "#7570b3", "#1b9e77", "#FFD700", "#C0C0C0", "#CD7F32"]
+            ),
+            link=dict(
+                source=sources,
+                target=targets,
+                value=values
+            )
+        )])
+
+        fig_sankey.update_layout(
+            title_text="Flow of Medals from Gender to Event Category and Medal Type",
+            height=550
+        )
+        st.plotly_chart(fig_sankey, use_container_width=True)
+
+    elif st.session_state.selected_button == "Buton 3":
+        st.subheader("Top Medallist Countries by Medal Type (Stacked Bar Chart)")
+
+        # Cleaning data
+        bar_df = df.dropna(subset=["country", "medal_type"]).copy()
+
+        # Interactive Slider: Choose how many top countries to display
+        top_n = st.slider("Select Number of Top Countries to Display:", min_value=5, max_value=30, value=15)
+
+        # Find top N countries by total medallists
+        top_countries = bar_df["country"].value_counts().nlargest(top_n).index
+        filtered_bar_df = bar_df[bar_df["country"].isin(top_countries)]
+
+        # Group by country and medal type
+        medal_counts = filtered_bar_df.groupby(["country", "medal_type"]).size().reset_index(name="count")
+
+        # Plot Stacked Bar Chart
+        fig_bar = px.bar(
+            medal_counts,
+            x="country",
+            y="count",
+            color="medal_type",
+            barmode="stack",
+            title=f"Top {top_n} Countries Medal Breakdown (Gold, Silver, Bronze)",
+            labels={
+                "country": "Country",
+                "count": "Number of Medallists",
+                "medal_type": "Medal Type"
+            },
+            category_orders={
+                "country": list(top_countries), # Sorts bars from highest total to lowest
+                "medal_type": ["Gold Medal", "Silver Medal", "Bronze Medal"]
+            },
+            color_discrete_map={
+                "Gold Medal": "#FFD700",
+                "Silver Medal": "#C0C0C0",
+                "Bronze Medal": "#CD7F32"
+            }
+        )
+
+        fig_bar.update_layout(height=550, xaxis_tickangle=-30)
+        st.plotly_chart(fig_bar, use_container_width=True)
 
     
     elif st.session_state.selected_button:
