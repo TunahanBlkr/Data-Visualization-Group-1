@@ -137,7 +137,8 @@ with right_column:
                     "age": "Age",
                     "gender": "Gender"
                 },
-                color_discrete_sequence=["#2b5c8f", "#d95f02"]
+                color_discrete_map={"Male": "#2b5c8f", "Female": "#d95f02"},
+                category_orders={"gender": ["Male", "Female"]}
             )
 
             fig_violin.update_layout(height=550, violinmode="group")          
@@ -165,9 +166,19 @@ with right_column:
         if selected_countries:
             sankey_df = sankey_df[sankey_df["country"].isin(selected_countries)]
 
+        color_map = {
+            "Male": "#2b5c8f",
+            "Female": "#d95f02",
+            "Individual Event": "#7570b3",
+            "Team / Group Event": "#1b9e77",
+            "Gold Medal": "#FFD700",
+            "Silver Medal": "#C0C0C0",
+            "Bronze Medal": "#CD7F32",
+}
+
         # Create unique nodes (labels) for all 3 stages
-        genders = list(sankey_df["gender"].unique())
-        events = list(sankey_df["event_category"].unique())
+        genders = [g for g in ["Male", "Female"] if g in sankey_df["gender"].unique()]
+        events = [e for e in ["Individual Event", "Team / Group Event"] if e in sankey_df["event_category"].unique()]
         medals = ["Gold Medal", "Silver Medal", "Bronze Medal"]
         
         labels = genders + events + medals
@@ -189,7 +200,7 @@ with right_column:
                 thickness=25,
                 line=dict(color="black", width=0.5),
                 label=labels,
-                color=["#2b5c8f", "#d95f02", "#7570b3", "#1b9e77", "#FFD700", "#C0C0C0", "#CD7F32"]
+                color=[color_map[l] for l in labels]
             ),
             link=dict(
                 source=sources,
