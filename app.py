@@ -10,6 +10,8 @@ from threading import Thread
 from streamlit.runtime import get_instance
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 
+from k_means_and_mekko_chart import show_mekko_page, show_scatter_plot, show_map_page
+
 st.set_page_config(layout="wide")
 
 def monitor_connections():
@@ -76,13 +78,13 @@ with left_column:
     if st.button("Buton 6", key="button_6", use_container_width=True):
         st.session_state.selected_button = "Buton 6"
     
-    if st.button("Buton 7", key="button_7", use_container_width=True):
+    if st.button("Mekko Chart (K-Means)", key="button_7", use_container_width=True):
         st.session_state.selected_button = "Buton 7"
     
-    if st.button("Buton 8", key="button_8", use_container_width=True):
+    if st.button("PCA Scatter Plot (K-Means)", key="button_8", use_container_width=True):
         st.session_state.selected_button = "Buton 8"
     
-    if st.button("Buton 9", key="button_9", use_container_width=True):
+    if st.button("Cluster Maps (Decision Tree)", key="button_9", use_container_width=True):
         st.session_state.selected_button = "Buton 9"
     
 
@@ -257,8 +259,12 @@ with right_column:
 
         fig_bar.update_layout(height=550, xaxis_tickangle=-30)
         st.plotly_chart(fig_bar, use_container_width=True)
-
-    
+    elif st.session_state.selected_button == "Buton 7":
+        show_mekko_page()
+    elif st.session_state.selected_button == "Buton 8":
+        show_scatter_plot()
+    elif st.session_state.selected_button == "Buton 9":
+            show_map_page()
     elif st.session_state.selected_button:
         st.info(f"**{st.session_state.selected_button}** selected.")
     else:
